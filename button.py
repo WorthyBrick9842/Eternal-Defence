@@ -1,7 +1,7 @@
 import pygame,resourceManager
 
 class Button:
-    def __init__(self,text = None,x=0,y=0,width=100,height=100,fileName=None,colour=(200,200,200),value = None):
+    def __init__(self,text = None,x=0,y=0,width=100,height=100,fileName=None,colour=(200,200,200),value = None,name = None):
         self.width = width
         self.height = height
         self.colour = colour
@@ -11,6 +11,7 @@ class Button:
         self.text = text
         self.value = value
         self.fillSqr = None
+        self.name = name
         #create an offset for the border of the image
         offset = 0
         if width > height:
@@ -50,7 +51,7 @@ class Button:
                 #return true when the mouse goes up to only trigger once
                 if mouseclicked == True and self.prevMouse == False:
                     # the button has been pressed
-                    return True,self.value
+                    return True,self.value,self.name
                 if self.prevMouse!=mouseclicked:
                     self.prevMouse = mouseclicked
-        return False,self.value # return false if any condition was not met      
+        return False,self.value,self.name # return false if any condition was not met      

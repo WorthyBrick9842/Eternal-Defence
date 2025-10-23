@@ -30,6 +30,7 @@ class GameController:
         while running:
             if frame == 3600:#get the frame
                 frame = 0
+                print("FRAME HAS BEEN RESET")
             frame+=1   
             running = self.handleEvents()# check for window closures
             if preGameRunning:# run the correct screen
@@ -161,12 +162,12 @@ class Endpage:
         mousePos = pygame.mouse.get_pos()
         mouseClicked = pygame.mouse.get_pressed()[0]
         #check buttons
-        playPressed = self.replayButton.checkClicked(mousePos,mouseClicked)[0]
+        playPressed,name = self.replayButton.checkClicked(mousePos,mouseClicked)[0]
         if playPressed:
             # False for menu running, true for play
             print("PLAY AGAIN BUTTON PRESSED")
             return False,True
-        exitPressed = self.exitButton.checkClicked(mousePos,mouseClicked)[0]
+        exitPressed,name = self.exitButton.checkClicked(mousePos,mouseClicked)[0]
         if exitPressed:
             #False to close menu and False to close window
             print("EXIT BUTTON PRESSED")
@@ -187,8 +188,11 @@ class Game:
         # self.spawnEnemies()
         self.EC = EnemyController.EnemyController()
         # create the unit buttons and distribute them
-        self.buttons[0].append(button.Button("",530,150,75,75,"SwordsmanShop.png",(200,200,200),statsMap.statsMap["Swordsman"]
-                                             ["cost"]))
+        self.buttons[0].append(button.Button("",545,150,75,75,"SwordsmanShop.png",(200,200,200),statsMap.statsMap["Swordsman"]
+                                             ["cost"],name="Swordsman"))
+        ################################################################################################################################
+        self.buttons[0].append(button.Button("",655,150,75,75,"ArcherShop.png",(200,200,200),statsMap.statsMap["Archer"]
+                                             ["cost"],name = "Archer"))
         
         # create the shop tabs and add them to a list
         Gtab = button.Button(text="    Ground",x=520,y=75,width=77,height=25,value=0)
@@ -227,7 +231,7 @@ class Game:
         # manage tabs
         for tab in self.tabs:
             tab.draw(self.screen)
-            switchedTab,tabNum = tab.checkClicked(mousepos,mouseClicked)
+            switchedTab,tabNum,tabName = tab.checkClicked(mousepos,mouseClicked)
             if switchedTab:
                 self.tabs[self.tabNum].changeColour((200,200,200))
                 self.tabNum = tabNum
@@ -236,8 +240,10 @@ class Game:
         #button logic, draw the button and check if it has been pressed
         for b in self.buttons[self.tabNum]:
             b.draw(self.screen)
-            buttonChecked,buttonCost = b.checkClicked(mousepos,mouseClicked)
+            buttonChecked,buttonCost,buttonName = b.checkClicked(mousepos,mouseClicked)
+            #################################################################################################################
             if buttonChecked and Variables.money >= buttonCost and not self.unitPlacementMode:
+                self.unitToPlace = buttonName
                 self.unitPlacementMode = True
                 Variables.money -= buttonCost
                 self.placeUnit(self.unitToPlace,mousepos,mouseClicked)
@@ -284,8 +290,7 @@ class Game:
             
             #signal end of main game
             return False
-        else:
-            print("Castle Health: ",Variables.castleObject.health)
+
         # draw mouse circle last to overlay on top of everything
         # for coord in self.coords:
         #     pygame.draw.circle(self.screen,(255,0,0),coord,5)
@@ -299,8 +304,7 @@ class Game:
     def placeUnit(self,type,mousepos,mousestatus):
         if mousestatus and self.inBounds(mousepos):# 
             #only placing ground units, would be a 'switch case' here for tower or physical
-            type = "Swordsman"
-            Variables.entities[0].append(Entities.Ground(name=type,data=statsMap.statsMap[type],pos=mousepos))
+            Variables.entities[0].append(Entities.Ground(name=self.unitToPlace,data=statsMap.statsMap[self.unitToPlace],pos=mousepos))
             print("placed trooper")
             self.unitPlacementMode = False
 

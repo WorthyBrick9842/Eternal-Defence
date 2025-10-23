@@ -11,7 +11,7 @@ class Entity:
         self.pos =  [pos[0],pos[1]]
         self.rect.center = self.pos
         #print(name+"jpg")
-        self.tLastAtk = 0
+        self.timeOfLastAtk = 0
         self.health = data["health"]
         self.damage = data["damage"]
         self.range = data["range"]
@@ -86,6 +86,7 @@ class Ground(Entity):
         self.visRange = statsMap.statsMap[name]["visibleRange"]
         self.path = []
         self.pathCount = 0
+        self.pathRefresh = 3
     def getDistance(self,target):
         return math.sqrt((self.pos[0]-target.rect.center[0])**2+(self.pos[1]-target.rect.center[1])**2)
     def move(self):
@@ -161,6 +162,8 @@ class Ground(Entity):
         else:
             self.directionVec[1] = -self.speed * math.sin(angle)
     def TakeDamage(self,damage,attacker):
+        if self.type in ["Goblin","Spear Orc"]:
+            print(f"{self.name} is taking damage")
         self.health -= damage
         if self.health<= 0:
             if self.type == "unit":
@@ -171,6 +174,7 @@ class Ground(Entity):
                     Variables.money += statsMap.statsMap[self.name]["health"]
                     Variables.score += statsMap.statsMap[self.name]["health"]
                 except ValueError:
+                    print("there was a value error")
                     pass
 
         else:
@@ -179,38 +183,56 @@ class Ground(Entity):
                 self.atkState = True
         
     def Attack(self,frame):
-        if (frame - self.tLastAtk)/60 > self.atkSpeed: # does not constantly attack
+        ################################################################################################################################
+        #frame resets to 0 after 3600 frames
+        #need to reset counter then as well
+        #if the time of the last attack is greater than the frame (3550 -> 10)
+        timeSinceLastAtk = (frame - self.timeOfLastAtk)/60
+
+        if self.timeOfLastAtk > frame:
+            # wait till frame is what the next attack time would have been -3600
+            if frame > (self.timeOfLastAtk+(self.atkSpeed*60)-3600):
+                timeSinceLastAtk = frame
+        if timeSinceLastAtk<0: 
+            self.timeOfLastAtk = 0
+
+
+        if timeSinceLastAtk > self.atkSpeed: # does not constantly attack
+            if self.name == "Archer":print(f"archer is shooting at {self.target}")
             if self.target.health <= self.damage: # will this attack kill the target
                 self.atkState = False
                 self.target.TakeDamage(self.damage,self)
                 self.target = None 
-                print("attack will kill target")
                 self.idle = True
                 self.path = []
             else:
                 self.target.TakeDamage(self.damage,self)
-            print(self,"Attacked enemy")
-            self.tLastAtk = frame
+            self.timeOfLastAtk = frame
     def update(self,frame):
         self.pathCount +=1
         #print(self,self.target,self.idle)
-        if self.target == None: self.idle = True
+        #checks to make sure that the target still exists
+        if self.target == None: 
+            self.idle = True
+        elif self.target not in Variables.entities[1] and self.target != Variables.castleObject:
+                self.idle = True
         if  self.idle:
             self.findTarget()
-            print("finding a target")
             if self.target != None:
-                print("a target was found")
                 self.findPath()
                 self.idle = False
+
         elif self.atkState:
+            #if self.name == "Archer":print(f"{self.name} has {self.target.name} as a target")
             distToTarget = self.getDistance(self.target)
             if distToTarget <= self.range:
-                self.Attack(frame)
+                self.Attack(frame)########################################################
             else:
                 self.atkState = False
             # if self.target == None:
             #     self.idle = True
         else:
+            
             if self.target == None:
                 self.idle = True
             else:
@@ -220,7 +242,8 @@ class Ground(Entity):
                     self.atkState = True
                 # if there is a target then move to it
                 #print("testing:",self,self.target,self.idle)
-                if self.pathCount >= 3 or len(self.path) == 0:
+
+                if self.pathCount >= self.pathRefresh or len(self.path) == 0:
                     self.path = []
                     self.findPath()
                     self.pathCount = 0

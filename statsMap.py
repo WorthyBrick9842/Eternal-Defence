@@ -1,6 +1,6 @@
 statsMap = {
     "Swordsman":   {"health":10,"damage":2,"cost":5,"type":"unit" ,"speed":0.2,"atkspeed":0.5,"range":50,"visibleRange":200},
-    "Archer":      {"health":10,"damage":2,"cost":1,"type":"unit","speed":5,"atkspeed":6,"range":50,"visibleRange":250},
+    "Archer":      {"health":10,"damage":2,"cost":1,"type":"unit","speed":0.1,"atkspeed":0.6,"range":100,"visibleRange":250},
     "Cavalry":     {"health":10,"damage":2,"cost":1,"type":"unit" ,"speed":5,"atkspeed":6,"range":50,"visibleRange":250},
     "Assassin":    {"health":10,"damage":2,"cost":1,"type":"unit" ,"speed":5,"atkspeed":6,"range":50,"visibleRange":250},
     "Archer Tower":{"health":10,"damage":2,"cost":1,"type":"unit" ,"speed":5,"atkspeed":6,"range":50,"visibleRange":250},
