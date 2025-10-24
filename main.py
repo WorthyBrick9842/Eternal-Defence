@@ -9,6 +9,7 @@ class GameController:
         self.frameRate = framerate
         self.stage = 0
         self.frame = 0
+        print(Variables.underlyingGrid.widthPixels)
     def setup(self):
         # A function called before each play of the game
         Variables.entities = [[],[]]
@@ -153,12 +154,13 @@ class Endpage:
         mousePos = pygame.mouse.get_pos()
         mouseClicked = pygame.mouse.get_pressed()[0]
         #check buttons
-        playPressed,name = self.replayButton.checkClicked(mousePos,mouseClicked)[0]
+        print(self.replayButton.checkClicked(mousePos,mouseClicked)[0])
+        playPressed = self.replayButton.checkClicked(mousePos,mouseClicked)[0]
         if playPressed:
             # False for menu running, true for play
             print("PLAY AGAIN BUTTON PRESSED")
             return False,True
-        exitPressed,name = self.exitButton.checkClicked(mousePos,mouseClicked)[0]
+        exitPressed  = self.exitButton.checkClicked(mousePos,mouseClicked)[0]
         if exitPressed:
             #False to close menu and False to close window
             print("EXIT BUTTON PRESSED")
@@ -192,7 +194,7 @@ class Game:
         Ptab = button.Button(text="   Physical",x=674,y=75,width=78,height=25,value=2)
         self.tabs = [Gtab,Ttab,Ptab]
         self.tabNum = 0
-
+        
         # unit placement graphics
         self.inBoundsSurface = pygame.surface.Surface((500,500),pygame.SRCALPHA)
         self.inBoundsCircle = pygame.draw.rect(self.inBoundsSurface,(255,100,100,125),pygame.Rect(0,0,500,500))
