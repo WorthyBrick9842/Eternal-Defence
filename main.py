@@ -8,7 +8,7 @@ class GameController:
         self.postGame = Endpage(self.screen)
         self.frameRate = framerate
         self.stage = 0
-        self.screen.blit
+        self.frame = 0
     def setup(self):
         # A function called before each play of the game
         Variables.entities = [[],[]]
@@ -18,6 +18,8 @@ class GameController:
         Variables.castleObject = Entities.Physical("Castle",(250,250))
         self.game = Game(self.screen)
         self.game.wave = 0
+        #only resset the frame on the setup
+        self.frame = 0
         
         
     def run(self):
@@ -26,12 +28,8 @@ class GameController:
         gameRunning = False
         postGameRunning = False
         running = True
-        frame = 0
         while running:
-            if frame == 3600:#get the frame
-                frame = 0
-                print("FRAME HAS BEEN RESET")
-            frame+=1   
+            self.frame+=1   
             running = self.handleEvents()# check for window closures
             if preGameRunning:# run the correct screen
                 preGameRunning,play = self.menu.update() # returns 2 bools, one to control the screen one to play
@@ -43,7 +41,7 @@ class GameController:
                         running = False
 
             if gameRunning:
-                gameRunning = self.game.update(frame)
+                gameRunning = self.game.update(self.frame)
             
             if postGameRunning:
                 postGameRunning,replay  = self.postGame.update()
@@ -70,14 +68,7 @@ class GameController:
             if event.type == pygame.QUIT:
                 return False
         return True  
-class TEMP:
-    def __init__(self):
-        
 
-        
-        
-        self.screen.blit(self.highScoreTitle,(330,200))
-        self.screen.blit(self.highScoreText,(self.highScorex,250))
 class Menu:
     def __init__(self,screen):
         self.screen = screen
@@ -190,10 +181,10 @@ class Game:
         # create the unit buttons and distribute them
         self.buttons[0].append(button.Button("",545,150,75,75,"SwordsmanShop.png",(200,200,200),statsMap.statsMap["Swordsman"]
                                              ["cost"],name="Swordsman"))
-        ################################################################################################################################
         self.buttons[0].append(button.Button("",655,150,75,75,"ArcherShop.png",(200,200,200),statsMap.statsMap["Archer"]
                                              ["cost"],name = "Archer"))
-        
+        self.buttons[1].append(button.Button("",545,150,75,75,"ArcherTowerShop.png",(200,200,200),statsMap.statsMap["ArcherTower"]
+                                             ["cost"],name = "ArcherTower"))        
         # create the shop tabs and add them to a list
         Gtab = button.Button(text="    Ground",x=520,y=75,width=77,height=25,value=0)
         Gtab.changeColour((150,150,150))
@@ -290,6 +281,7 @@ class Game:
             
             #signal end of main game
             return False
+        
 
         # draw mouse circle last to overlay on top of everything
         # for coord in self.coords:
@@ -304,7 +296,10 @@ class Game:
     def placeUnit(self,type,mousepos,mousestatus):
         if mousestatus and self.inBounds(mousepos):# 
             #only placing ground units, would be a 'switch case' here for tower or physical
-            Variables.entities[0].append(Entities.Ground(name=self.unitToPlace,data=statsMap.statsMap[self.unitToPlace],pos=mousepos))
+            if self.unitToPlace in ["Swordsman","Archer"]:
+                Variables.entities[0].append(Entities.Ground(name=self.unitToPlace,data=statsMap.statsMap[self.unitToPlace],pos=mousepos))
+            elif self.unitToPlace in ["ArcherTower"]:
+                Variables.entities[0].append(Entities.Tower(name=self.unitToPlace,data=statsMap.statsMap[self.unitToPlace],pos=mousepos))
             print("placed trooper")
             self.unitPlacementMode = False
 

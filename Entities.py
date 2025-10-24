@@ -43,6 +43,8 @@ class Tower(Entity):
         super().__init__(name,data,pos)  
         self.fireRate = data["atkspeed"]
         self.AOE = 10
+        self.idle = True
+        self.timeOfLastAtk = 0
     def findTarget(self):
         # find the closest enemy to the defence unit
         # as it is a tower, I do not need to check if it is an enemy
@@ -55,25 +57,62 @@ class Tower(Entity):
                 self.target = entity
                 closest = distance
 
-    def Attack(self):
+    def Attack(self,frame):
         # the tower can only be a unit, so anything it kills will drop money
         # check the range against the distance
-        distance = math.sqrt((self.pos[0]-self.target.pos[0])**2+(self.pos[1]-self.target.pos[1])**2)
-        if distance < self.range:
-            if self.target.health <= self.damage:
-                self.changeState()
-                # add the enemies max health to the score
-                score = score + statsMap.statsMap[self.target.name]["health"]
-                self.target = None
-            self.target.takeDamage(self.damage)
-        else:
-            self.changeState()
-    def update(self,ticks):
-        # only attack if the elapsed time is > fireRate
-        if self.atkState and (ticks-self.lastTicks) >= self.fireRate:
-            self.Attack()
-        elif self.target ==None:
+        timeSinceLastAtk = (frame - self.timeOfLastAtk)/60
+
+        if self.timeOfLastAtk > frame:
+            # wait till frame is what the next attack time would have been -3600
+            if frame > (self.timeOfLastAtk+(self.fireRate*60)-3600):
+                timeSinceLastAtk = frame
+        if timeSinceLastAtk<0: 
+            self.timeOfLastAtk = 0
+
+
+        if timeSinceLastAtk > self.fireRate: # does not constantly attack
+            if self.target.health <= self.damage: # will this attack kill the target
+                self.atkState = False
+                self.target.TakeDamage(self.damage,self)
+                self.target = None 
+                self.idle = True
+                self.path = []
+            else:
+                self.target.TakeDamage(self.damage,self)
+            self.timeOfLastAtk = frame
+    def getDistance(self):
+        return math.sqrt((self.pos[0]-self.target.pos[0])**2+(self.pos[1]-self.target.pos[1])**2)
+    def update(self,frame):#
+        #print(self,self.target,self.idle)
+        #checks to make sure that the target still exists
+        if self.target == None: 
+            self.idle = True
+        elif self.target not in Variables.entities[1] and self.target != Variables.castleObject:
+                self.idle = True
+
+        if  self.idle:
             self.findTarget()
+            if self.target != None:
+                self.idle = False
+
+        elif self.atkState:
+            distToTarget = self.getDistance()
+            if distToTarget <= self.range:
+                self.Attack(frame)########################################################
+            else:
+                self.atkState = False
+        else:
+            if self.target == None:
+                self.idle = True
+            else:
+                # check to change states
+                distToTarget = self.getDistance() 
+                if distToTarget < self.range:
+                    self.atkState = True
+                # if there is a target then move to it
+                #print("testing:",self,self.target,self.idle)
+    def reset(self):
+        self.timeOfLastAtk = 0
 
 class Ground(Entity):
     def __init__(self,name,data,pos):
@@ -189,12 +228,12 @@ class Ground(Entity):
         #if the time of the last attack is greater than the frame (3550 -> 10)
         timeSinceLastAtk = (frame - self.timeOfLastAtk)/60
 
-        if self.timeOfLastAtk > frame:
-            # wait till frame is what the next attack time would have been -3600
-            if frame > (self.timeOfLastAtk+(self.atkSpeed*60)-3600):
-                timeSinceLastAtk = frame
-        if timeSinceLastAtk<0: 
-            self.timeOfLastAtk = 0
+        # if self.timeOfLastAtk > frame:
+        #     # wait till frame is what the next attack time would have been -3600
+        #     if frame > (self.timeOfLastAtk+(self.atkSpeed*60)-3600):
+        #         timeSinceLastAtk = frame
+        # if timeSinceLastAtk<0: 
+        #     self.timeOfLastAtk = 0
 
 
         if timeSinceLastAtk > self.atkSpeed: # does not constantly attack
@@ -254,6 +293,7 @@ class Ground(Entity):
         self.path = []
         self.target = None
         self.idle = False
+        self.timeOfLastAtk = 0
 class necromancer(Ground):
     def __init__(self,name,data,pos):
         super().__init__(name,data,pos)

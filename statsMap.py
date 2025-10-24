@@ -3,7 +3,7 @@ statsMap = {
     "Archer":      {"health":10,"damage":2,"cost":1,"type":"unit","speed":0.1,"atkspeed":0.6,"range":100,"visibleRange":250},
     "Cavalry":     {"health":10,"damage":2,"cost":1,"type":"unit" ,"speed":5,"atkspeed":6,"range":50,"visibleRange":250},
     "Assassin":    {"health":10,"damage":2,"cost":1,"type":"unit" ,"speed":5,"atkspeed":6,"range":50,"visibleRange":250},
-    "Archer Tower":{"health":10,"damage":2,"cost":1,"type":"unit" ,"speed":5,"atkspeed":6,"range":50,"visibleRange":250},
+    "ArcherTower":{"health":10,"damage":1,"cost":1,"type":"unit" ,"speed":5,"atkspeed":1.5,"range":150,"visibleRange":250},
     "Catapult":    {"health":10,"damage":2,"cost":1,"type":"unit" ,"speed":5,"atkspeed":6,"range":50,"visibleRange":250},
     "Fire Tower":  {"health":10,"damage":2,"cost":1,"type":"unit" ,"speed":5,"atkspeed":6,"range":50,"AOE range":8,"visibleRange":250},
     "Wall":        {"health":10,"damage":2,"cost":1,"type":"unit" ,"speed":5,"atkspeed":6,"range":50,"resistance":8},
