@@ -9,14 +9,15 @@ class GameController:
         self.frameRate = framerate
         self.stage = 0
         self.frame = 0
-        print(Variables.underlyingGrid.widthPixels)
+        print(Variables.underlyingGrid.nodeHeight)
+        print(Variables.underlyingGrid.nodeWidth)
     def setup(self):
         # A function called before each play of the game
         Variables.entities = [[],[]]
         Variables.castleObject = None
         Variables.money = 15
         Variables.score = 0
-        Variables.castleObject = Entities.Physical("Castle",(250,250))
+        Variables.castleObject = Entities.Physical(name="Castle",data=statsMap.statsMap["Castle"],pos=(250,250))
         self.game = Game(self.screen)
         self.game.wave = 0
         #only resset the frame on the setup
@@ -178,6 +179,8 @@ class Game:
         self.buttons = [[],[],[]]
         self.unitPlacementMode = False
         self.unitToPlace = None
+        self.placementCount = 0
+        self.prevMousePressed = False
         # self.spawnEnemies()
         self.EC = EnemyController.EnemyController()
         # create the unit buttons and distribute them
@@ -186,7 +189,9 @@ class Game:
         self.buttons[0].append(button.Button("",655,150,75,75,"ArcherShop.png",(200,200,200),statsMap.statsMap["Archer"]
                                              ["cost"],name = "Archer"))
         self.buttons[1].append(button.Button("",545,150,75,75,"ArcherTowerShop.png",(200,200,200),statsMap.statsMap["ArcherTower"]
-                                             ["cost"],name = "ArcherTower"))        
+                                             ["cost"],name = "ArcherTower"))      
+        self.buttons[2].append(button.Button("",545,150,75,75,"WallShop.png",(200,200,200),statsMap.statsMap["Wall"]
+                                             ["cost"],name = "Wall"))     
         # create the shop tabs and add them to a list
         Gtab = button.Button(text="    Ground",x=520,y=75,width=77,height=25,value=0)
         Gtab.changeColour((150,150,150))
@@ -200,6 +205,9 @@ class Game:
         self.inBoundsCircle = pygame.draw.rect(self.inBoundsSurface,(255,100,100,125),pygame.Rect(0,0,500,500))
         self.inBoundsCircleOuter = pygame.draw.circle(self.inBoundsSurface,(255,255,255,0),(250,250),self.boundsRadius)
         self.inBoundsCircleInner = pygame.draw.circle(self.inBoundsSurface,(255,100,100,125),(250,250),50)
+        self.exitPlacementModeButton = button.Button(x =450,y=0,width = 50,height = 50, 
+                                                     fileName="exitUnitPlacement.png",border=False)
+        self.exitPlacementModeButton.draw(self.inBoundsSurface)
     def update(self,frame):
     
 
@@ -234,11 +242,10 @@ class Game:
         for b in self.buttons[self.tabNum]:
             b.draw(self.screen)
             buttonChecked,buttonCost,buttonName = b.checkClicked(mousepos,mouseClicked)
-            #################################################################################################################
-            if buttonChecked and Variables.money >= buttonCost and not self.unitPlacementMode:
+            if buttonChecked:
                 self.unitToPlace = buttonName
                 self.unitPlacementMode = True
-                Variables.money -= buttonCost
+                
                 self.placeUnit(self.unitToPlace,mousepos,mouseClicked)
 
         #draw entities
@@ -246,8 +253,8 @@ class Game:
             entity.draw(self.screen)
             entity.update(frame)
             #pygame.draw.circle(self.screen,(200,200,200),entity.rect.center,entity.visRange,2)
-            # for step in entity.path:
-            #     pygame.draw.circle(self.screen,(0,0,255),Variables.underlyingGrid.getCellPos(step),5)
+            for step in entity.path:
+                pygame.draw.circle(self.screen,(0,0,255),Variables.underlyingGrid.getCellPos(step),5)
             
             #entity.update()
         for entity in Variables.entities[0]:
@@ -258,11 +265,28 @@ class Game:
             #see entities range
             #pygame.draw.circle(self.screen,(200,200,200),entity.rect.center,entity.visRange,2)
             #     pygame.draw.circle(self.screen,(255,0,255),Variables.underlyingGrid.getCellPos(step),5)
-            
-        
+        # see underlying grid nodes
+        # for row in Variables.underlyingGrid.grid:
+        #     for node in row:
+        #         if node.weight!=0:
+        #             col = (100,100,100)
+        #         else:
+        #             col = (100,100,255)
+        #         pygame.draw.circle(self.screen,col,Variables.underlyingGrid.getCellPos([node.col,node.row]),radius= 5)
+
+
         if self.unitPlacementMode:
             self.screen.blit(self.inBoundsSurface,(0,0))
-            self.placeUnit(self.unitToPlace,mousepos,mouseClicked)
+            #check the previous state of the mouse was unpressed
+            if mouseClicked and not self.prevMousePressed:
+                self.placeUnit(self.unitToPlace,mousepos,mouseClicked)
+                self.prevMousePressed = True
+            #set previous state of mouse to unpressed when it released
+            if not mouseClicked and self.prevMousePressed:
+                self.prevMousePressed = False
+            #exit placement mode at the press of the button
+            if self.exitPlacementModeButton.checkClicked(mousepos,mouseClicked)[0]:
+                self.unitPlacementMode = False
         
         if Variables.castleObject == None:
             # read the previous highscore
@@ -295,15 +319,28 @@ class Game:
             if event.type == pygame.QUIT:
                 return False
         return True
+    
     def placeUnit(self,type,mousepos,mousestatus):
-        if mousestatus and self.inBounds(mousepos):# 
-            #only placing ground units, would be a 'switch case' here for tower or physical
-            if self.unitToPlace in ["Swordsman","Archer"]:
-                Variables.entities[0].append(Entities.Ground(name=self.unitToPlace,data=statsMap.statsMap[self.unitToPlace],pos=mousepos))
-            elif self.unitToPlace in ["ArcherTower"]:
-                Variables.entities[0].append(Entities.Tower(name=self.unitToPlace,data=statsMap.statsMap[self.unitToPlace],pos=mousepos))
-            print("placed trooper")
-            self.unitPlacementMode = False
+        cost = statsMap.statsMap[self.unitToPlace]["cost"]
+        #check the player has the money
+        if Variables.money<cost:
+            print("ran out of money")
+            return
+        else:
+            #check the mouse is in bounds
+            if mousestatus and self.inBounds(mousepos):# 
+                if self.unitToPlace in ["Swordsman","Archer"]: # add other ground units here
+                    Variables.entities[0].append(Entities.Ground(name=self.unitToPlace,data=statsMap.statsMap[self.unitToPlace],pos=mousepos))
+
+                elif self.unitToPlace in ["ArcherTower"]: # add other towers here
+                    Variables.entities[0].append(Entities.Tower(name=self.unitToPlace,data=statsMap.statsMap[self.unitToPlace],pos=mousepos))
+
+                elif self.unitToPlace in ["Wall"]: # add other physical defences here
+                    Variables.entities[0].append(Entities.Physical(name=self.unitToPlace,data=statsMap.statsMap[self.unitToPlace],pos=mousepos))
+                Variables.money -= cost
+            
+            
+            
 
     def inBounds(self,pos):
         if 50<math.sqrt((250-pos[0])**2 + (250-pos[1])**2) < self.boundsRadius:

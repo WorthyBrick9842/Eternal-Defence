@@ -6,6 +6,7 @@ class Entity:
         # define the key Variables mostly from the statsMap data structure
         self.texture = resourceManager.load_image(name+".png")
         self.rect = self.texture.get_rect()
+        print(f"DATA: {self.rect.width}")
         self.name = name
         self.type = data["type"]
         self.pos =  [pos[0],pos[1]]
@@ -137,7 +138,6 @@ class Ground(Entity):
         self.rect.centerx = int(self.pos[0])
         self.rect.centery = int(self.pos[1])
         if Variables.underlyingGrid.findcell(self.rect.center) == self.path[0]:
-            print(self,"Node reached")
             self.path.pop(0)
             if len(self.path) >0:
                 self.getDirection()
@@ -306,13 +306,28 @@ class necromancer(Ground):
             # except AttributeError:
             #     self.target = None
 class Physical(Entity):
-    def __init__(self,name,pos):
-        super().__init__(name,statsMap.statsMap[name],pos)
+    def __init__(self,name,data,pos):
+        super().__init__(name,data,pos)
         self.resistance = statsMap.statsMap[name]["resistance"]
         self.damageState = 4
         self.maxHealth = statsMap.statsMap[name]["health"]
-        # self.cell = grid.findCell(pos[0],pos[1])
-        # grid[self.cell[0]][self.cell[1]].updateType()
+
+        if self.name != "Castle":
+            #place the top left corner on the mouse click
+            self.topLeft = Variables.underlyingGrid.findcell(pos)
+            #get the position of the nearest node to the mouse pointer
+            topLeftPos = Variables.underlyingGrid.getCellPos(self.topLeft)
+            #set the position to the middle of 4 nodes
+            newX = topLeftPos[0]+(Variables.underlyingGrid.nodeWidth/2)
+            newY = topLeftPos[1]+(Variables.underlyingGrid.nodeHeight/2)
+            self.rect.center = (newX,newY)
+            #update the weight of the 4 nodes
+            Variables.underlyingGrid.updateCellWeight((self.topLeft[0],self.topLeft[1]),1000)
+            Variables.underlyingGrid.updateCellWeight((self.topLeft[0]+1,self.topLeft[1]),1000)
+            Variables.underlyingGrid.updateCellWeight((self.topLeft[0],self.topLeft[1]+1),1000)
+            Variables.underlyingGrid.updateCellWeight((self.topLeft[0]+1,self.topLeft[1]+1),1000)
+
+        print(f"Created a {self.name} at {self.pos}")
     def TakeDamage(self,dmg,attacker):
         # if health is a multiple of 0.25* maxheaalth, change Skins
         self.health -= dmg
@@ -325,7 +340,7 @@ class Physical(Entity):
             if (self.health / self.maxHealth) < (0.25*self.damageState) and self.damageState >0:
                 self.damageState -=1
                 # CHANGE TEXTURE
-                newTexture = "castle "+str(self.damageState)+".png"
+                newTexture = self.name+str(self.damageState)+".png"
                 self.texture = resourceManager.load_image(newTexture).convert_alpha()
                 #self.texture = pygame.image.load().convert_alpha()
             self.Attack(attacker)
@@ -333,7 +348,10 @@ class Physical(Entity):
         attacker.TakeDamage(attacker.health,self)
     def changeTexture(self,newTexture):
         self.texture = newTexture
-
+    def update(self,frame):
+        pass
+    def reset(self):
+        pass
 
 # t = Tower("Swordsman",statsMap.statsMap["Swordsman"],(0,0))
 # a1 = Tower("Archer",statsMap.statsMap["Archer"],(10,50))

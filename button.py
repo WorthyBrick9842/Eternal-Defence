@@ -1,7 +1,7 @@
 import pygame,resourceManager
 
 class Button:
-    def __init__(self,text = None,x=0,y=0,width=100,height=100,fileName=None,colour=(200,200,200),value = None,name = None):
+    def __init__(self,text = None,x=0,y=0,width=100,height=100,fileName=None,colour=(200,200,200),value = None,name = None,border = True):
         self.width = width
         self.height = height
         self.colour = colour
@@ -14,10 +14,11 @@ class Button:
         self.name = name
         #create an offset for the border of the image
         offset = 0
-        if width > height:
-            offset = self.height/20
-        else:
-            offset = self.width/20
+        if border:
+            if width > height:
+                offset = self.height/20
+            else:
+                offset = self.width/20
         # only add text, if text is specified upon creation
         if self.text != None:
             self.buttonfont = pygame.font.SysFont("Arial",int((self.height-(2*offset))*3/4))
