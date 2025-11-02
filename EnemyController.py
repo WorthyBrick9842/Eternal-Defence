@@ -9,10 +9,10 @@ class EnemyController:
         else:
             self.createWave(waveNum)
     def createWave(self,waveNum):
-        # create a map of the weights for this round"Spear Orc" : max(8-waveNum,1),
+        # create a map of the weights for this round
         weightMap = {
             "Goblin" : max(10-waveNum,1),
-            
+            "Spear Orc" : max(8-waveNum,1),
             "Dark Knight" : max((waveNum-5)*0.7,0),
             "Giant Ogre" : max((waveNum-10)*0.7,0),
             "Necromancer" : max((waveNum-10)*0.2,0)            
