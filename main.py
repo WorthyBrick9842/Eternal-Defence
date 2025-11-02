@@ -15,7 +15,7 @@ class GameController:
         # A function called before each play of the game
         Variables.entities = [[],[]]
         Variables.castleObject = None
-        Variables.money = 15
+        Variables.money = 30
         Variables.score = 0
         Variables.castleObject = Entities.Physical(name="Castle",data=statsMap.statsMap["Castle"],pos=(250,250))
         self.game = Game(self.screen)
@@ -30,7 +30,11 @@ class GameController:
         gameRunning = False
         postGameRunning = False
         running = True
+        currentTick = 0
+        prevTick = 0
         while running:
+            #print(currentTick-prevTick)
+            prevTick = currentTick
             self.frame+=1   
             running = self.handleEvents()# check for window closures
             if preGameRunning:# run the correct screen
@@ -63,6 +67,7 @@ class GameController:
             pygame.draw.circle(self.screen,(255,0,0),pygame.mouse.get_pos(),5) #red mopuse circle
 
             self.clock.tick(self.frameRate)
+            currentTick = pygame.time.get_ticks()
             pygame.display.update()
         pygame.quit()
     def handleEvents(self):
@@ -212,11 +217,8 @@ class Game:
     
 
         if not Variables.entities[1]:
-            st = time.time()
             self.EC.createWave(self.wave)
             self.wave +=1
-            et = time.time()
-            print("Time for wave creation: ",et-st)
             for defence in Variables.entities[0]:
                 defence.reset()
         self.screen.fill((220,220,220))
@@ -253,8 +255,8 @@ class Game:
             entity.draw(self.screen)
             entity.update(frame)
             #pygame.draw.circle(self.screen,(200,200,200),entity.rect.center,entity.visRange,2)
-            for step in entity.path:
-                pygame.draw.circle(self.screen,(0,0,255),Variables.underlyingGrid.getCellPos(step),5)
+            # for step in entity.path:
+            #     pygame.draw.circle(self.screen,(0,0,255),Variables.underlyingGrid.getCellPos(step),5)
             
             #entity.update()
         for entity in Variables.entities[0]:
@@ -268,10 +270,13 @@ class Game:
         # see underlying grid nodes
         # for row in Variables.underlyingGrid.grid:
         #     for node in row:
-        #         if node.weight!=0:
+        #         if node.occupant== None:
         #             col = (100,100,100)
         #         else:
-        #             col = (100,100,255)
+        #             if node.occupant.name == "Wall":
+        #                 col = (100,100,255)
+        #             else:
+        #                 col = (100,100,100)
         #         pygame.draw.circle(self.screen,col,Variables.underlyingGrid.getCellPos([node.col,node.row]),radius= 5)
 
 

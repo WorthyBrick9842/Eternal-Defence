@@ -9,8 +9,11 @@ class Node:
         self.fCost = math.inf
         self.gCost = math.inf
         self.parent = None
-    def updateOccupant(self,newOccupantType):
+        self.occupant = None
+    def updateOccupantType(self,newOccupantType):
         self.occupationType = newOccupantType
+    def updateOccupant(self,newOccupant):
+        self.occupant = newOccupant
     def updateWeight(self,newWeight):
         self.weight = newWeight
     def resetPathfinding(self):
@@ -63,10 +66,13 @@ class underlyingGrid:
             return "error"
     def updateCellType(self,cellPos,newType):
         #print(cellPos)
-        self.grid[cellPos[1]][cellPos[0]].updateOccupant(newType)
+        self.grid[cellPos[1]][cellPos[0]].updateOccupantType(newType)
+    def updateCellOccupant(self,cellPos,newOccupant):
+        self.grid[cellPos[1]][cellPos[0]].updateOccupant(newOccupant)
     def updateCellWeight(self,cellPos,newWeight):
         self.grid[cellPos[1]][cellPos[0]].updateWeight(newWeight)
     def resetCell(self,cellPos):
+        self.grid[cellPos[1]][cellPos[0]].updateOccupantType(None)
         self.grid[cellPos[1]][cellPos[0]].updateOccupant(None)
         self.grid[cellPos[1]][cellPos[0]].updateWeight(0)
     def get_nearby_nodes(self,openNodes,grid,currentNode):

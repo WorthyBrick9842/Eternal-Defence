@@ -1,4 +1,4 @@
-import math,statsMap,pygame,Variables,resourceManager
+import math,statsMap,pygame,Variables,resourceManager,random
 grid = []
 
 class Entity:
@@ -6,7 +6,6 @@ class Entity:
         # define the key Variables mostly from the statsMap data structure
         self.texture = resourceManager.load_image(name+".png")
         self.rect = self.texture.get_rect()
-        print(f"DATA: {self.rect.width}")
         self.name = name
         self.type = data["type"]
         self.pos =  [pos[0],pos[1]]
@@ -22,13 +21,23 @@ class Entity:
         
         self.cellPos = Variables.underlyingGrid.findcell(self.rect.center)
         Variables.underlyingGrid.updateCellType(self.cellPos,self.type)
+        Variables.underlyingGrid.updateCellOccupant(self.cellPos,self)
         Variables.underlyingGrid.updateCellWeight(self.cellPos,1)
         # self.money  = money - data["cost"]
     def destroy(self):
+        print(f"destrpying {self}")
+        if self.name == "Wall":
+            for i in range(self.topLeft[0],self.topLeft[0]+2):
+                for j in range(self.topLeft[1],self.topLeft[1]+2):
+                    
+                    Variables.underlyingGrid.resetCell((i,j))
+        else:
+            Variables.underlyingGrid.resetCell(self.cellPos)
         if self.type =="unit":
             Variables.entities[0].remove(self)
         else:
             Variables.entities[1].remove(self)
+        
     def draw(self,screen):
         screen.blit(self.texture,(self.rect.topleft))
     def changeState(self):
@@ -74,12 +83,12 @@ class Tower(Entity):
         if timeSinceLastAtk > self.fireRate: # does not constantly attack
             if self.target.health <= self.damage: # will this attack kill the target
                 self.atkState = False
-                self.target.TakeDamage(self.damage,self)
+                self.target.takeDamage(self.damage,self)
                 self.target = None 
                 self.idle = True
                 self.path = []
             else:
-                self.target.TakeDamage(self.damage,self)
+                self.target.takeDamage(self.damage,self)
             self.timeOfLastAtk = frame
     def getDistance(self):
         return math.sqrt((self.pos[0]-self.target.pos[0])**2+(self.pos[1]-self.target.pos[1])**2)
@@ -126,7 +135,7 @@ class Ground(Entity):
         self.visRange = statsMap.statsMap[name]["visibleRange"]
         self.path = []
         self.pathCount = 0
-        self.pathRefresh = 3
+        self.pathRefresh = 4
     def getDistance(self,target):
         return math.sqrt((self.pos[0]-target.rect.center[0])**2+(self.pos[1]-target.rect.center[1])**2)
     def move(self):
@@ -143,16 +152,26 @@ class Ground(Entity):
                 self.getDirection()
             else:
                 self.idle = True
+        # if in a new cell
         if Variables.underlyingGrid.findcell(self.rect.center) != self.cellPos:
             # print(self.cellPos)
-            Variables.underlyingGrid.updateCellType([self.cellPos[0],self.cellPos[1]],"empty")
-            Variables.underlyingGrid.updateCellWeight([self.cellPos[0],self.cellPos[1]],0)
+            #reset the current cell so a trial is not left
+            # Variables.underlyingGrid.resetCell(self.cellPos)
 
             self.cellPos = Variables.underlyingGrid.findcell(self.rect.center)
 
-            Variables.underlyingGrid.updateCellType([self.cellPos[0],self.cellPos[1]],self.type)
-            Variables.underlyingGrid.updateCellWeight([self.cellPos[0],self.cellPos[1]],1)
-
+            # check if a wall has been hit
+            currentCell = Variables.underlyingGrid.grid[self.cellPos[1]][self.cellPos[0]]
+            # if the cell they are in is possessed by a unit with a weight> 1 it must be a wall
+            if currentCell.occupant != None:
+                if currentCell.occupant.name == "Wall" and self.type == "enemy":
+                    currentCell.occupant.takeDamage(self.health,self)
+            
+            #update new cell 
+            else:
+                Variables.underlyingGrid.updateCellType(self.cellPos,self.type)
+                Variables.underlyingGrid.updateCellWeight(self.cellPos,1)
+                Variables.underlyingGrid.updateCellOccupant(self.cellPos,self)
     def findTarget(self):
         closest = 0
         if self.type == "enemy":
@@ -200,21 +219,13 @@ class Ground(Entity):
             self.directionVec[1] = self.speed * math.sin(angle)
         else:
             self.directionVec[1] = -self.speed * math.sin(angle)
-    def TakeDamage(self,damage,attacker):
-        if self.type in ["Goblin","Spear Orc"]:
-            print(f"{self.name} is taking damage")
+    def takeDamage(self,damage,attacker):
         self.health -= damage
         if self.health<= 0:
-            if self.type == "unit":
-                Variables.entities[0].remove(self)
-            else:
-                try:
-                    Variables.entities[1].remove(self)
-                    Variables.money += statsMap.statsMap[self.name]["health"]
-                    Variables.score += statsMap.statsMap[self.name]["health"]
-                except ValueError:
-                    print("there was a value error")
-                    pass
+            self.destroy()
+            if self.type == "enemy":
+                Variables.money += statsMap.statsMap[self.name]["health"]
+                Variables.score += statsMap.statsMap[self.name]["health"]
 
         else:
             if self.target != attacker:
@@ -237,20 +248,20 @@ class Ground(Entity):
 
 
         if timeSinceLastAtk > self.atkSpeed: # does not constantly attack
-            if self.name == "Archer":print(f"archer is shooting at {self.target}")
             if self.target.health <= self.damage: # will this attack kill the target
                 self.atkState = False
-                self.target.TakeDamage(self.damage,self)
+                self.target.takeDamage(self.damage,self)
                 self.target = None 
                 self.idle = True
                 self.path = []
             else:
-                self.target.TakeDamage(self.damage,self)
+                self.target.takeDamage(self.damage,self)
             self.timeOfLastAtk = frame
     def update(self,frame):
         self.pathCount +=1
         #print(self,self.target,self.idle)
         #checks to make sure that the target still exists
+        
         if self.target == None: 
             self.idle = True
         elif self.target not in Variables.entities[1] and self.target != Variables.castleObject:
@@ -302,7 +313,7 @@ class necromancer(Ground):
         for i in range(1,5):
             Variables.entities.append(Ground("skelleton"),statsMap.statsMap["Skeleton"],self.pos)
             #     try:
-            #     self.target.TakeDamage(self.damage,self)
+            #     self.target.takeDamage(self.damage,self)
             # except AttributeError:
             #     self.target = None
 class Physical(Entity):
@@ -310,6 +321,7 @@ class Physical(Entity):
         super().__init__(name,data,pos)
         self.resistance = statsMap.statsMap[name]["resistance"]
         self.damageState = 4
+        self.initialWeight = 100
         self.maxHealth = statsMap.statsMap[name]["health"]
 
         if self.name != "Castle":
@@ -322,16 +334,23 @@ class Physical(Entity):
             newY = topLeftPos[1]+(Variables.underlyingGrid.nodeHeight/2)
             self.rect.center = (newX,newY)
             #update the weight of the 4 nodes
-            Variables.underlyingGrid.updateCellWeight((self.topLeft[0],self.topLeft[1]),1000)
-            Variables.underlyingGrid.updateCellWeight((self.topLeft[0]+1,self.topLeft[1]),1000)
-            Variables.underlyingGrid.updateCellWeight((self.topLeft[0],self.topLeft[1]+1),1000)
-            Variables.underlyingGrid.updateCellWeight((self.topLeft[0]+1,self.topLeft[1]+1),1000)
+            for i in range(self.topLeft[0],self.topLeft[0]+2):
+                for j in range(self.topLeft[1],self.topLeft[1]+2):
+                    Variables.underlyingGrid.updateCellWeight((i,j),100)
+                    Variables.underlyingGrid.updateCellType((i,j),self.type)
+                    Variables.underlyingGrid.updateCellOccupant((i,j),self)
+        
 
-        print(f"Created a {self.name} at {self.pos}")
-    def TakeDamage(self,dmg,attacker):
+    def takeDamage(self,initialDmg,attacker):
         # if health is a multiple of 0.25* maxheaalth, change Skins
+        # 20% resistance decreases damage taken by 20%
+        print("initialDmg",initialDmg)
+        dmg = int(initialDmg - (initialDmg*self.resistance))
+        print("Dmg",dmg)
         self.health -= dmg
+
         if self.health <= 0:
+
             if self == Variables.castleObject:
                 Variables.castleObject = None
             else:
@@ -343,15 +362,29 @@ class Physical(Entity):
                 newTexture = self.name+str(self.damageState)+".png"
                 self.texture = resourceManager.load_image(newTexture).convert_alpha()
                 #self.texture = pygame.image.load().convert_alpha()
-            self.Attack(attacker)
+
+        self.Attack(attacker)
     def Attack(self,attacker):
-        attacker.TakeDamage(attacker.health,self)
+        attacker.takeDamage(attacker.health,self)    
+        #check the wall has not just been destroyed
+        if self.health > 0 and self.name != "Castle":
+            #calculate the new weight of the wall
+            newWeight = int(self.initialWeight*(self.health/self.maxHealth))
+            print(f"New weight {newWeight}")        
+            #reset the weights of the cells beneath the wall
+            for i in range(self.topLeft[0],self.topLeft[0]+2):
+                for j in range(self.topLeft[1],self.topLeft[1]+2):
+                    Variables.underlyingGrid.updateCellWeight((i,j),newWeight)
+                    Variables.underlyingGrid.updateCellType((i,j),self.type)
+                    Variables.underlyingGrid.updateCellOccupant((i,j),self)
+
     def changeTexture(self,newTexture):
         self.texture = newTexture
     def update(self,frame):
         pass
     def reset(self):
         pass
+    
 
 # t = Tower("Swordsman",statsMap.statsMap["Swordsman"],(0,0))
 # a1 = Tower("Archer",statsMap.statsMap["Archer"],(10,50))

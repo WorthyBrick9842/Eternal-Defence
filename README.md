@@ -5,4 +5,5 @@ When running the game feel free to edit the entity stats in statsMap as currentl
 
 Current issues:
 defence not being attacked
+Too many entities making the game laggy (pathfinding all happens at once and needs to be staggered)
 
