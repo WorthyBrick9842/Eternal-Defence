@@ -1,10 +1,13 @@
 statsMap = {
-    "Swordsman":   {"health":5,"damage":2,"cost":5,"type":"unit" ,"speed":0.2,"atkspeed":0.5,"range":50,"visibleRange":200},
+    "Swordsman":   {"health":5,"damage":2,"cost":5,"type":"unit" ,"speed":0.2,"atkspeed":1,"range":50,"visibleRange":200},
     "Archer":      {"health":3,"damage":2,"cost":6,"type":"unit","speed":0.1,"atkspeed":0.6,"range":100,"visibleRange":250},
     "ArcherTower": {"health":10,"damage":1,"cost":10,"type":"unit" ,"speed":5,"atkspeed":1.5,"range":150,"visibleRange":250},
     "Wall":        {"health":50,"damage":2,"cost":10,"type":"unit" ,"speed":5,"atkspeed":6,"range":50,"resistance":0},#resistance must be decimal between 0 and 1
-    
-    "Goblin":      {"health":3,"damage":2,"cost":1,"type":"enemy" ,"speed":0.2,"atkspeed":0.5,"range":50,"visibleRange":250},
+    # "SwordsmanUpgrade":   {"cost":50},
+    # "ArcherUpgrade":      {"cost":50},
+    # "ArcherTowerUpgrade": {"cost":50},
+    # "WallUpgrade":        {"cost":50},
+    "Goblin":      {"health":10,"damage":2,"cost":1,"type":"enemy" ,"speed":0.2,"atkspeed":1,"range":50,"visibleRange":250},
     "Spear Orc":   {"health":3,"damage":3,"cost":1,"type":"enemy" ,"speed":0.2,"atkspeed":0.75,"range":100,"visibleRange":250},
     "Dark Knight": {"health":10,"damage":4,"cost":1,"type":"enemy" ,"speed":0.1,"atkspeed":6,"range":50,"visibleRange":250},
     "Giant Ogre":  {"health":10,"damage":2,"cost":1,"type":"enemy" ,"speed":0.1,"atkspeed":6,"range":50,"visibleRange":250},

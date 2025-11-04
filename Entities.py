@@ -25,7 +25,6 @@ class Entity:
         Variables.underlyingGrid.updateCellWeight(self.cellPos,1)
         # self.money  = money - data["cost"]
     def destroy(self):
-        print(f"destrpying {self}")
         if self.name == "Wall":
             for i in range(self.topLeft[0],self.topLeft[0]+2):
                 for j in range(self.topLeft[1],self.topLeft[1]+2):
@@ -258,13 +257,17 @@ class Ground(Entity):
                 self.target.takeDamage(self.damage,self)
             self.timeOfLastAtk = frame
     def update(self,frame):
+        if self.name == "Goblin":
+            print(self.target)
         self.pathCount +=1
         #print(self,self.target,self.idle)
         #checks to make sure that the target still exists
-        
+                        
+
         if self.target == None: 
             self.idle = True
         elif self.target not in Variables.entities[1] and self.target != Variables.castleObject:
+                print(f"{self.name} has been made idle")
                 self.idle = True
         if  self.idle:
             self.findTarget()

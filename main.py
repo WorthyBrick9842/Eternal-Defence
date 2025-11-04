@@ -196,7 +196,9 @@ class Game:
         self.buttons[1].append(button.Button("",545,150,75,75,"ArcherTowerShop.png",(200,200,200),statsMap.statsMap["ArcherTower"]
                                              ["cost"],name = "ArcherTower"))      
         self.buttons[2].append(button.Button("",545,150,75,75,"WallShop.png",(200,200,200),statsMap.statsMap["Wall"]
-                                             ["cost"],name = "Wall"))     
+                                             ["cost"],name = "Wall"))  
+
+        #self.buttons[0].append(button.Button("",545,150,25,25,"UpgradeIcon.png",(200,200,200),50,name="SwordsmanUpgrade"))           
         # create the shop tabs and add them to a list
         Gtab = button.Button(text="    Ground",x=520,y=75,width=77,height=25,value=0)
         Gtab.changeColour((150,150,150))
