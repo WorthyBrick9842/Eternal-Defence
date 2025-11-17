@@ -1,0 +1,32 @@
+import pyautogui,time
+
+
+while True:
+    time.sleep(60)
+    for i in range(10):
+        pyautogui.keyDown("w")
+    time.sleep(1)
+    for i in range(10):
+        pyautogui.keyDown("s")
+    pyautogui.leftClick(x=960,y=540)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+w
+
+
+
+

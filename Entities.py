@@ -257,18 +257,26 @@ class Ground(Entity):
                 self.target.takeDamage(self.damage,self)
             self.timeOfLastAtk = frame
     def update(self,frame):
-        if self.name == "Goblin":
-            print(self.target)
+
         self.pathCount +=1
         #print(self,self.target,self.idle)
         #checks to make sure that the target still exists
                         
 
-        if self.target == None: 
+        if self.target == None and (self.target not in Variables.entities[0] or self.target not in Variables.entities[1]): 
             self.idle = True
-        elif self.target not in Variables.entities[1] and self.target != Variables.castleObject:
-                print(f"{self.name} has been made idle")
+
+        if self.type == "enemy":
+            if self.target not in Variables.entities[0] and self.target!= Variables.castleObject:
+                print(self.target)
                 self.idle = True
+        else:
+            if self.target not in Variables.entities[1]:
+                self.idle = True
+        # elif self.target not in Variables.entities[1] and self.target != Variables.castleObject:
+        #         print(f"{self.name} has been made idle")
+        #         self.idle = True
+
         if  self.idle:
             self.findTarget()
             if self.target != None:
@@ -285,7 +293,6 @@ class Ground(Entity):
             # if self.target == None:
             #     self.idle = True
         else:
-            
             if self.target == None:
                 self.idle = True
             else:

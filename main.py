@@ -1,4 +1,4 @@
-import pygame,button,Variables,Entities,statsMap,math,random,EnemyController,time
+import pygame,button,Variables,Entities,statsMap,math,random,EnemyController,time,resourceManager
 pygame.init()
 class GameController:
     def __init__(self,screenWidth,screenHeight,framerate):
@@ -160,16 +160,13 @@ class Endpage:
         mousePos = pygame.mouse.get_pos()
         mouseClicked = pygame.mouse.get_pressed()[0]
         #check buttons
-        print(self.replayButton.checkClicked(mousePos,mouseClicked)[0])
         playPressed = self.replayButton.checkClicked(mousePos,mouseClicked)[0]
         if playPressed:
             # False for menu running, true for play
-            print("PLAY AGAIN BUTTON PRESSED")
             return False,True
         exitPressed  = self.exitButton.checkClicked(mousePos,mouseClicked)[0]
         if exitPressed:
             #False to close menu and False to close window
-            print("EXIT BUTTON PRESSED")
             return False,False
         return True,False
 class Game:
@@ -181,24 +178,42 @@ class Game:
         self.wave = 10
         self.coords = []
         self.dataFont = pygame.font.SysFont("Consolas",25)
+        #2d lists to store shop data
         self.buttons = [[],[],[]]
+        self.unitCosts = [[],[],[]]
+
         self.unitPlacementMode = False
         self.unitToPlace = None
         self.placementCount = 0
         self.prevMousePressed = False
+        #housekeeping variables
+        self.groundDefenceNames = ["Swordsman","Archer"]
+        self.towerDefenceNames = ["ArcherTower"]
+        self.physicalDefenceNames = ["Wall"]
         # self.spawnEnemies()
         self.EC = EnemyController.EnemyController()
-        # create the unit buttons and distribute them
+        #create a defence button then the defence cost to go beneath it
         self.buttons[0].append(button.Button("",545,150,75,75,"SwordsmanShop.png",(200,200,200),statsMap.statsMap["Swordsman"]
                                              ["cost"],name="Swordsman"))
+        self.unitCosts[0].append([self.dataFont.render(str(statsMap.statsMap["Swordsman"]["cost"]),True,(0,0,0)),(565,225)])
+
         self.buttons[0].append(button.Button("",655,150,75,75,"ArcherShop.png",(200,200,200),statsMap.statsMap["Archer"]
                                              ["cost"],name = "Archer"))
+        self.unitCosts[0].append([self.dataFont.render(str(statsMap.statsMap["Archer"]["cost"]),True,(0,0,0)),(675,225)])
+
         self.buttons[1].append(button.Button("",545,150,75,75,"ArcherTowerShop.png",(200,200,200),statsMap.statsMap["ArcherTower"]
                                              ["cost"],name = "ArcherTower"))      
+        self.unitCosts[1].append([self.dataFont.render(str(statsMap.statsMap["ArcherTower"]["cost"]),True,(0,0,0)),(565,225)])
+
         self.buttons[2].append(button.Button("",545,150,75,75,"WallShop.png",(200,200,200),statsMap.statsMap["Wall"]
                                              ["cost"],name = "Wall"))  
+        self.unitCosts[2].append([self.dataFont.render(str(statsMap.statsMap["Wall"]["cost"]),True,(0,0,0)),(565,225)])
 
-        #self.buttons[0].append(button.Button("",545,150,25,25,"UpgradeIcon.png",(200,200,200),50,name="SwordsmanUpgrade"))           
+        self.buttons[0].append(button.Button("",545,150,25,25,"UpgradeIcon.png",(200,200,200),50,name="SwordsmanUpgrade")) 
+        self.buttons[0].append(button.Button("",655,150,25,25,"UpgradeIcon.png",(200,200,200),50,name="ArcherUpgrade")) 
+        self.buttons[1].append(button.Button("",545,150,25,25,"UpgradeIcon.png",(200,200,200),50,name="ArcherTowerUpgrade")) 
+        self.buttons[2].append(button.Button("",545,150,25,25,"UpgradeIcon.png",(200,200,200),50,name="WallUpgradeUpgrade")) 
+
         # create the shop tabs and add them to a list
         Gtab = button.Button(text="    Ground",x=520,y=75,width=77,height=25,value=0)
         Gtab.changeColour((150,150,150))
@@ -207,6 +222,7 @@ class Game:
         self.tabs = [Gtab,Ttab,Ptab]
         self.tabNum = 0
         
+        self.moneyCoin = resourceManager.load_image("goldCoin.png")
         # unit placement graphics
         self.inBoundsSurface = pygame.surface.Surface((500,500),pygame.SRCALPHA)
         self.inBoundsCircle = pygame.draw.rect(self.inBoundsSurface,(255,100,100,125),pygame.Rect(0,0,500,500))
@@ -215,11 +231,15 @@ class Game:
         self.exitPlacementModeButton = button.Button(x =450,y=0,width = 50,height = 50, 
                                                      fileName="exitUnitPlacement.png",border=False)
         self.exitPlacementModeButton.draw(self.inBoundsSurface)
+
+        #unit upgrade 
+        self.upgradeButton = button.Button(" Upgrade",565,400,150,65,colour=(0,255,0))
+
     def update(self,frame):
     
 
         if not Variables.entities[1]:
-            self.EC.createWave(self.wave)
+            self.EC.newWave(self.wave)
             self.wave +=1
             for defence in Variables.entities[0]:
                 defence.reset()
@@ -236,6 +256,7 @@ class Game:
         # manage tabs
         for tab in self.tabs:
             tab.draw(self.screen)
+            
             switchedTab,tabNum,tabName = tab.checkClicked(mousepos,mouseClicked)
             if switchedTab:
                 self.tabs[self.tabNum].changeColour((200,200,200))
@@ -246,11 +267,18 @@ class Game:
         for b in self.buttons[self.tabNum]:
             b.draw(self.screen)
             buttonChecked,buttonCost,buttonName = b.checkClicked(mousepos,mouseClicked)
+            
             if buttonChecked:
                 self.unitToPlace = buttonName
                 self.unitPlacementMode = True
-                
                 self.placeUnit(self.unitToPlace,mousepos,mouseClicked)
+
+        #go through the costs and draw them to the screen
+        for cost in self.unitCosts[self.tabNum]:
+            #draw the coin
+            self.screen.blit(self.moneyCoin,(cost[1][0]-20,cost[1][1]+5))
+            # draw the text
+            self.screen.blit(cost[0],cost[1])
 
         #draw entities
         for entity in Variables.entities[1]: # [1] signifies the enemies
@@ -263,8 +291,6 @@ class Game:
             #entity.update()
         for entity in Variables.entities[0]:
             entity.draw(self.screen)
-            # entity.findTarget()
-            # entity.findPath()
             entity.update(frame)
             #see entities range
             #pygame.draw.circle(self.screen,(200,200,200),entity.rect.center,entity.visRange,2)
@@ -283,7 +309,11 @@ class Game:
 
 
         if self.unitPlacementMode:
-            self.screen.blit(self.inBoundsSurface,(0,0))
+            if "Upgrade" in self.unitToPlace:
+                self.upgradeButton.draw(self.screen)
+            else:
+                self.screen.blit(self.inBoundsSurface,(0,0))
+            
             #check the previous state of the mouse was unpressed
             if mouseClicked and not self.prevMousePressed:
                 self.placeUnit(self.unitToPlace,mousepos,mouseClicked)
@@ -328,22 +358,44 @@ class Game:
         return True
     
     def placeUnit(self,type,mousepos,mousestatus):
+        
         cost = statsMap.statsMap[self.unitToPlace]["cost"]
         #check the player has the money
         if Variables.money<cost:
             print("ran out of money")
+            self.unitToPlace = None
+            self.unitPlacementMode = False
             return
-        else:
+        else:#
+            # check if an upgrade has been seleted
+            if "Upgrade" in self.unitToPlace and self.upgradeButton.checkClicked(mousepos,mousestatus)[0]:
+                #take the money for the upgrade
+                Variables.money -= statsMap.statsMap[self.unitToPlace]["cost"]
+                # put upgrades here
+                #remove the last 7 letters ("Upgrade") from the unit to place to leave just the name of the defece
+                unitToUpgrade = self.unitToPlace[:-7]
+                #Upgrades are arbitary and need to be changed/balanced
+                print(statsMap.statsMap[unitToUpgrade]["health"])
+                statsMap.statsMap[unitToUpgrade]["health"] = int(statsMap.statsMap[unitToUpgrade]["health"]*1.5)
+                print(statsMap.statsMap[unitToUpgrade]["damage"])
+                statsMap.statsMap[unitToUpgrade]["damage"] = int(statsMap.statsMap[unitToUpgrade]["damage"]*1.5)
+                print(statsMap.statsMap[unitToUpgrade]["speed"])
+                statsMap.statsMap[unitToUpgrade]["speed"] = round((statsMap.statsMap[unitToUpgrade]["speed"]*1.5),1)
+                print(statsMap.statsMap[unitToUpgrade])
+
+                self.unitToPlace = None
+                self.unitPlacementMode = False
             #check the mouse is in bounds
-            if mousestatus and self.inBounds(mousepos):# 
-                if self.unitToPlace in ["Swordsman","Archer"]: # add other ground units here
+            elif mousestatus and self.inBounds(mousepos):# 
+                if self.unitToPlace in self.groundDefenceNames: # add other ground units here
                     Variables.entities[0].append(Entities.Ground(name=self.unitToPlace,data=statsMap.statsMap[self.unitToPlace],pos=mousepos))
 
-                elif self.unitToPlace in ["ArcherTower"]: # add other towers here
+                elif self.unitToPlace in self.towerDefenceNames: # add other towers here
                     Variables.entities[0].append(Entities.Tower(name=self.unitToPlace,data=statsMap.statsMap[self.unitToPlace],pos=mousepos))
 
-                elif self.unitToPlace in ["Wall"]: # add other physical defences here
+                elif self.unitToPlace in self.physicalDefenceNames: # add other physical defences here
                     Variables.entities[0].append(Entities.Physical(name=self.unitToPlace,data=statsMap.statsMap[self.unitToPlace],pos=mousepos))
+
                 Variables.money -= cost
             
             
@@ -362,6 +414,8 @@ class Game:
         #draw money count
         moneyCount = self.dataFont.render("Money: "+ str(Variables.money),True,(0,0,0))
         self.screen.blit(moneyCount,(525,40))
+        #draw the gold coin before the money
+        self.screen.blit(self.moneyCoin,(608,45))
         # draw wavecount
         waveCount = self.dataFont.render("Wave: "+ str(self.wave),True,(0,0,0))
         self.screen.blit(waveCount,(190,20))

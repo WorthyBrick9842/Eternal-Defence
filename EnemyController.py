@@ -3,11 +3,15 @@ class EnemyController:
     def __init__(self):
         #skeleton not included as it is spawned by necromancer
         self.enemies = ["Goblin","Spear Orc","Dark Knight","Giant Ogre","Necromancer"]
+
     def newWave(self,waveNum):
-        if waveNum %10 == 0:
+        if (waveNum+1) %10 == 0 and waveNum !=-1:
+            print("boss wave")
             self.bossWave()
         else:
+            print("Normal wave")
             self.createWave(waveNum)
+
     def createWave(self,waveNum):
         # create a map of the weights for this round
         weightMap = {
@@ -42,7 +46,18 @@ class EnemyController:
         x = int(250+(math.cos(angle)*240))
         y = int(250+(math.sin(angle)*240))
         Variables.entities[1].append(Entities.Ground(enemyName,statsMap.statsMap[enemyName],(x,y)))
-    def bossWave(waveNum):
-        pass
+    def bossWave(self):
+        #choose a random enemy to use as a boss
+        boss = random.choice(self.enemies)
+        self.spawnEnemy(boss)
+
+        print("creating a boss wave")
+        #upgrade the stats of the enemy
+        print("Old stats:",Variables.entities[1][0].health, Variables.entities[1][0].damage,Variables.entities[1][0].speed )
+        Variables.entities[1][0].health = 10* Variables.entities[1][0].health
+        Variables.entities[1][0].damage = 5* Variables.entities[1][0].damage
+        Variables.entities[1][0].speed = round(0.75*Variables.entities[1][0].speed,2)
+        print("New stats:",Variables.entities[1][0].health, Variables.entities[1][0].damage,Variables.entities[1][0].speed )
+        
 # EC= EnemyController()
 # EC.createWave(1)
